@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::env;
 
-use crate::structures::data::{ConnectionPool, PrefixMap};
+
 use serenity::{
-    framework::standard::{macros::command, Args, CommandResult},
+    framework::standard::{Args, CommandResult, macros::command},
     model::prelude::*,
     prelude::*,
 };
-use std::env;
+
+use crate::structures::data::{ConnectionPool, PrefixMap};
 
 #[command]
 #[required_permissions("MANAGE_GUILD")]
@@ -45,18 +46,22 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             "UPDATE guild_info SET prefix = null WHERE guild_id = $1",
             guild_id.0 as i64
         )
-        .execute(&pool)
-        .await?;
+            .execute(&pool)
+            .await?;
 
         prefixes.remove(&guild_id);
     } else {
+        println!("setting prefix correctly");
         sqlx::query!(
-            "UPDATE guild_info SET prefix = $1 WHERE guild_id = $2",
+            "INSERT INTO guild_info (guild_id,prefix)\
+            VALUES ($2,$1)\
+            ON CONFLICT (guild_id) DO UPDATE \
+            SET prefix = $1;"   ,
             new_prefix,
             guild_id.0 as i64
         )
-        .execute(&pool)
-        .await?;
+            .execute(&pool)
+            .await?;
 
         prefixes.insert(guild_id, new_prefix.to_owned());
     }
