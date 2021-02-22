@@ -1,5 +1,6 @@
 mod structures;
 mod commands;
+mod helpers;
 
 use std::{collections::HashSet, env, sync::Arc};
 use serenity::{
@@ -22,8 +23,9 @@ use tracing_subscriber::{
 };
 use serenity::model::prelude::Message;
 use commands::meta::*;
+use commands::config::*;
 use structures::data::*;
-
+use crate::helpers::*;
 struct Handler;
 
 
@@ -39,7 +41,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping)]
+#[commands(ping,prefix)]
 struct General;
 
 #[tokio::main]
@@ -65,16 +67,16 @@ async fn main() {
 
     #[hook]
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
-        let (prefixes, default_prefix) = {
-            let data = ctx.data.read().await;
-            let prefixes = data.get::<PrefixMap>().cloned().unwrap();
-            let default_prefix =
-                env::var("DEFAULT_PREFIX").expect("problem getting default prefix");
+        let data = ctx.data.read().await;
 
-            (prefixes, default_prefix)
-        };
-        let guild_id = msg.guild_id.unwrap();
-        match prefixes.get(&guild_id) {
+        let prefixes = data.get::<PrefixMap>().cloned();
+        let default_prefix =
+                env::var("DEFAULT_PREFIX").expect("fuck");
+
+
+        let guild_id = msg.guild_id;
+
+        match prefixes.unwrap().get(&guild_id?) {
             Some(prefix_guard) => Some(prefix_guard.value().to_owned()),
             None => Some(default_prefix),
         }

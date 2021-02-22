@@ -1,5 +1,5 @@
 [package]
-name = "silver"
+name = "emerald"
 version = "0.1.0"
 authors = ["TheUserCreated <boswinle001@gmail.com>"]
 edition = "2018"
@@ -10,7 +10,7 @@ edition = "2018"
 dotenv = "0.15.0"
 tracing = "0.1.24"
 tracing-subscriber = "0.2.16"
-dashmap = "4.0.2"
+dashmap = "4.0.1"
 sqlx = { version = "0.5.1", features = ["runtime-tokio-rustls", "macros", "postgres", "uuid"]}
 [dependencies.tokio]
 version = "1.0"
