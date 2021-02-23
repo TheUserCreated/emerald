@@ -24,6 +24,11 @@ use structures::data::*;
 
 use crate::helpers::*;
 
+
+use serenity::model::guild::Member;
+use serenity::client::bridge::gateway::GatewayIntents;
+
+
 mod structures;
 mod commands;
 mod helpers;
@@ -39,6 +44,10 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn guild_member_update(&self,_ctx:Context,_old_if_available: Option<Member>, new: Member){
+        info!("user {:?} updated", new.display_name());
+    }
+
     async fn ready(&self, _: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
     }
@@ -105,6 +114,7 @@ async fn main() {
     let mut client = Client::builder(&token)
         .framework(framework)
         .event_handler(Handler)
+        .intents(GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS)
         .await
         .expect("Err creating client");
 
@@ -112,8 +122,6 @@ async fn main() {
         .await
         .unwrap();
     let prefixes = db::fetch_prefixes(&pool).await.unwrap();
-    println!("{:?}", prefixes);
-
     {
         let mut data = client.data.write().await;
         data.insert::<ShardManagerContainer>(client.shard_manager.clone());

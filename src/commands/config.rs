@@ -51,7 +51,6 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
         prefixes.remove(&guild_id);
     } else {
-        println!("setting prefix correctly");
         sqlx::query!(
             "INSERT INTO guild_info (guild_id,prefix)\
             VALUES ($2,$1)\
