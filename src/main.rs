@@ -21,7 +21,7 @@ use tracing_subscriber::{
 use commands::config::*;
 use commands::meta::*;
 use structures::data::*;
-
+use commands::rolegreet::*;
 use crate::helpers::*;
 
 
@@ -44,8 +44,10 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn guild_member_update(&self,_ctx:Context,_old_if_available: Option<Member>, new: Member){
+    async fn guild_member_update(&self,ctx:Context,old_if_available: Option<Member>, new: Member){
         info!("user {:?} updated", new.display_name());
+        greeting_handler(ctx, old_if_available,new).await.expect("problemo, friendo");
+
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
@@ -58,7 +60,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, prefix, die)]
+#[commands(ping, prefix, die, greeting, set_greeting)]
 struct General;
 
 #[tokio::main]
