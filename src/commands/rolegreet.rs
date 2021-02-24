@@ -3,24 +3,13 @@ use serenity::{
     model::prelude::*,
     prelude::*,
 };
-use tracing::{error, info};
+use tracing::{info};
 use crate::helpers::perms::greetperms;
-use crate::structures::data::{ShardManagerContainer, ConnectionPool};
+use crate::structures::data::{ConnectionPool};
 use serenity::static_assertions::_core::str::FromStr;
 use crate::db::set_greeting_internal;
 use std::collections::HashSet;
-
-#[command]
-#[required_permissions("MANAGE_GUILD")]
-async fn greeting(ctx: &Context, msg:&Message, mut args: Args) -> CommandResult{
-    //let response = greetperms(&ctx,&msg).await;
-    //let response = format!("Your perm status was {:?}",response);
-    //msg.reply(&ctx,response).await.expect("couldnt respond");
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().cloned().unwrap();
-
-    Ok(())
-}
+use crate::helpers::db::get_greeting;
 
 
 #[command]
@@ -54,7 +43,10 @@ pub async fn greeting_handler(ctx: Context,old_if_available: Option<Member>, new
     if difference.is_empty() {
         return Ok(())
     }
-    info!("user with an updated role, role seems to be {:?}",difference);
-
-    Ok(())
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionPool>().cloned().unwrap();
+    let greet_result =get_greeting(&pool, &new.guild_id, *difference.first().unwrap()).await;
+    let (channel_id,greeting) = greet_result.expect("couldnt get greeting data from database");
+    channel_id.say(ctx.http,greeting).await.expect("couldnt send the greeting. do i have perms?");
+      Ok(())
 }

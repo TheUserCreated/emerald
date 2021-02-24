@@ -29,7 +29,6 @@ use serenity::model::guild::Member;
 use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::model::id::GuildId;
 
-use serenity::futures::StreamExt;
 
 
 mod structures;
@@ -47,8 +46,12 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn cache_ready(&self,_ctx:Context, _guilds: Vec<GuildId>){
+        info!("Cache ready!");
+
+    }
+
     async fn guild_member_update(&self,ctx:Context,old_if_available: Option<Member>, new: Member){
-        info!("user {:?} updated", new.display_name());
         greeting_handler(ctx, old_if_available,new).await.expect("problemo, friendo");
 
     }
@@ -56,27 +59,13 @@ impl EventHandler for Handler {
     async fn ready(&self, _: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
     }
-
     async fn resume(&self, _: Context, _: ResumedEvent) {
         info!("Resumed");
-    }
-    async fn cache_ready(&self,ctx:Context, guilds: Vec<GuildId>){
-        info!("Cache ready!");
-        //for guild in guilds.into_iter() {
-        //    let mut members = guild.members_iter(&ctx).boxed();
-        //    while let Some(member_result) = members.next().await {
-        //        match member_result {
-        //            Ok(member) => info!("{} has been cached", member.display_name()),
-        //            Err(error)=> error!("Error! {}",error),
-        //        }
-        //    }
-        //}
-
     }
 }
 
 #[group]
-#[commands(ping, prefix, die, greeting, set_greeting)]
+#[commands(ping, prefix, die, set_greeting)]
 struct General;
 
 #[tokio::main]
@@ -132,7 +121,7 @@ async fn main() {
     let mut client = Client::builder(&token)
         .framework(framework)
         .event_handler(Handler)
-        .intents(GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS)
+        .intents(GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_PRESENCES)
         .await
         .expect("Err creating client");
 
