@@ -40,12 +40,20 @@ async fn set_greeting(ctx: &Context, msg:&Message, mut args: Args) -> CommandRes
     Ok(())
 }
 
-pub async fn greeting_handler(ctx: Context,old: Option<Member>, new: Member) -> CommandResult {
+pub async fn greeting_handler(ctx: Context,old_if_available: Option<Member>, new: Member) -> CommandResult {
+    let old = match old_if_available {
+        Some(m) => m,
+        None => return Ok(()),
+    };
 
-    let oldroles = old.expect("cant access old roles").roles;
+    let oldroles = old.roles;
     let newroles = new.roles;
+
     let role_set: HashSet<_> = oldroles.iter().collect();
     let difference: Vec<_> = newroles.into_iter().filter(|item|!role_set.contains(item)).collect();
+    if difference.is_empty() {
+        return Ok(())
+    }
     info!("user with an updated role, role seems to be {:?}",difference);
 
     Ok(())

@@ -27,6 +27,9 @@ use crate::helpers::*;
 
 use serenity::model::guild::Member;
 use serenity::client::bridge::gateway::GatewayIntents;
+use serenity::model::id::GuildId;
+
+use serenity::futures::StreamExt;
 
 
 mod structures;
@@ -56,6 +59,19 @@ impl EventHandler for Handler {
 
     async fn resume(&self, _: Context, _: ResumedEvent) {
         info!("Resumed");
+    }
+    async fn cache_ready(&self,ctx:Context, guilds: Vec<GuildId>){
+        info!("Cache ready!");
+        //for guild in guilds.into_iter() {
+        //    let mut members = guild.members_iter(&ctx).boxed();
+        //    while let Some(member_result) = members.next().await {
+        //        match member_result {
+        //            Ok(member) => info!("{} has been cached", member.display_name()),
+        //            Err(error)=> error!("Error! {}",error),
+        //        }
+        //    }
+        //}
+
     }
 }
 
@@ -130,7 +146,7 @@ async fn main() {
         data.insert::<ConnectionPool>(pool);
         data.insert::<PrefixMap>(Arc::new(prefixes));
     }
-    if let Err(why) = client.start_shards(2).await {
+    if let Err(why) = client.start_autosharded().await {
         error!("Client error: {:?}", why);
     }
 }
