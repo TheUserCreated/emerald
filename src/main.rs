@@ -28,7 +28,7 @@ use crate::helpers::*;
 use serenity::model::guild::Member;
 use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::model::id::GuildId;
-
+use tokio::time::{sleep, Duration};
 
 
 mod structures;
@@ -65,7 +65,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, prefix, die, set_greeting)]
+#[commands(ping, prefix, die, set_greeting, remove_greeting)]
 struct General;
 
 #[tokio::main]
@@ -77,6 +77,10 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("Failed to start the logger");
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let http = Http::new_with_token(&token);
+    let shard_array_start :u64 = env::var("SHARD_ARRAY_START").expect("failed to load shard array start in env").parse().expect("no");
+    let shard_array_end :u64 = env::var("SHARD_ARRAY_END").expect("failed to load shard array start in env").parse().expect("no");
+    let total_shards :u64 = env::var("TOTAL_SHARDS").expect("couldnt load totals shards in env").parse().expect("no");
+
     let (owners, _bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
@@ -124,6 +128,26 @@ async fn main() {
         .intents(GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_PRESENCES)
         .await
         .expect("Err creating client");
+    let manager = client.shard_manager.clone();
+
+    tokio::spawn(async move {
+        loop {
+            sleep(Duration::from_secs(30)).await;
+
+            let lock = manager.lock().await;
+            let shard_runners = lock.runners.lock().await;
+
+            for (id, runner) in shard_runners.iter() {
+                println!(
+                    "Shard ID {} is {} with a latency of {:?}",
+                    id,
+                    runner.stage,
+                    runner.latency,
+                );
+            }
+        }
+    });
+
 
     let pool = db::get_db_pool(env::var("DATABASE_URL").expect("define a database url in env"))
         .await
@@ -135,7 +159,7 @@ async fn main() {
         data.insert::<ConnectionPool>(pool);
         data.insert::<PrefixMap>(Arc::new(prefixes));
     }
-    if let Err(why) = client.start_autosharded().await {
+    if let Err(why) = client.start_shard_range([shard_array_start,shard_array_end],total_shards).await {
         error!("Client error: {:?}", why);
     }
 }

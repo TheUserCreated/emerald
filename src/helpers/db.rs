@@ -2,7 +2,7 @@ use dashmap::DashMap;
 use serenity::{framework::standard::CommandResult, model::id::GuildId};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use serenity::model::id::{ChannelId, RoleId};
-use tracing::{error, info};
+
 
 pub async fn get_db_pool(db_connection: String) -> CommandResult<PgPool> {
     let connection_string = &db_connection;
@@ -28,12 +28,6 @@ pub async fn fetch_prefixes(pool: &PgPool) -> CommandResult<DashMap<GuildId, Str
     }
     Ok(prefixes)
 }
-
-//pub async fn fetch_greeting(pool: &PgPool, guild_id: &GuildId, channel_id: ChannelId,role_id: RoleId) -> CommandResult<String> {
-//    let greeting = sqlx::query!("SELECT greeting WHERE guild_id = $1",
-//    guild_id)
-//    Ok(("fuckoff".parse().unwrap()))
-//}
 
 pub async fn set_greeting_internal(pool: &PgPool, guild_id: &GuildId, channel_id: ChannelId,role_id: RoleId, greeting_text: String) -> CommandResult{
 
@@ -70,4 +64,15 @@ pub async fn get_greeting(pool: &PgPool, guild_id: &GuildId, role_id: RoleId) ->
     return Ok((ChannelId::from(channel_id), greeting))
 
 
+}
+
+pub async fn remove_greeting_internal(pool: &PgPool, guild_id: &GuildId, channel_id: &ChannelId,role_id: &RoleId) -> CommandResult{
+    sqlx::query!("DELETE FROM greeting_info WHERE guild_id = $1 AND channel_id = $2 AND role_id = $3",
+    guild_id.0 as i64,
+    channel_id.0 as i64,
+    role_id.0 as i64,
+    )
+        .execute(pool)
+        .await?;
+    Ok(())
 }
