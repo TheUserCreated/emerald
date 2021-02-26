@@ -38,8 +38,8 @@ mod helpers;
 struct Handler;
 
 //TODO greetings:
-// greetings greet a user when they receive a role
-// the channel the greeting takes place in is dependent on the role
+// greetings greet a user when they receive a role - done
+// the channel the greeting takes place in is dependent on the role - done
 // if the user receives another role to be greeted in a short time, in the same channel, it must be edited into the previous greeting
 // if many users need to receive the same greeting, make one message but ping many (MAX TEN)
 
@@ -65,7 +65,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, prefix, die, set_greeting, remove_greeting)]
+#[commands(ping, prefix, die, greeting, )]
 struct General;
 
 #[tokio::main]

@@ -6,7 +6,7 @@ use serenity::{
     prelude::*,
 };
 use serenity::static_assertions::_core::str::FromStr;
-
+use tracing::{debug};
 
 use crate::db::remove_greeting_internal;
 use crate::db::set_greeting_internal;
@@ -15,7 +15,16 @@ use crate::structures::data::ConnectionPool;
 
 #[command]
 #[required_permissions("MANAGE_GUILD")]
-async fn set_greeting(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+#[sub_commands(remove, add)]
+async fn greeting(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+
+    msg.reply(ctx, "Use add, remove, or list.").await?;
+
+    Ok(())
+}
+#[command]
+#[required_permissions("MANAGE_GUILD")]
+async fn add(ctx: &Context, msg:&Message, mut args: Args) -> CommandResult{
     let role = args.current().expect("no role found");
     let role = RoleId::from_str(role).expect("couldn't unpack roleid from argument");
     let data = ctx.data.read().await;
@@ -25,14 +34,12 @@ async fn set_greeting(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
     args.advance();
     let greeting = args.rest();
     set_greeting_internal(&pool, &guild_id, channel_id, role, greeting.parse().unwrap()).await?;
-
-
     Ok(())
 }
 
 #[command]
 #[required_permissions("MANAGE_GUILD")]
-async fn remove_greeting(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let role = args.current().expect("no role found");
     let role = RoleId::from_str(role).expect("couldn't unpack roleid from argument");
     let data = ctx.data.read().await;
@@ -64,7 +71,10 @@ pub async fn greeting_handler(ctx: Context, old_if_available: Option<Member>, ne
     let greet_result = get_greeting(&pool, &new.guild_id, **difference.first().unwrap()).await;
     let (channel_id, greeting) = greet_result.expect("couldn't get greeting data from database");
     let greeting = greeting_replacements(&ctx, &new, greeting).await.expect("failure at greeting text replacement!");
-
+    if channel_id.0 == 0 {
+        return Ok(())
+    }
+    debug!("greeting attempting to be sent in channel {:?}",channel_id);
     channel_id.say(ctx.http, greeting).await.expect("couldn't send the greeting. do i have perms?");
     Ok(())
 }
