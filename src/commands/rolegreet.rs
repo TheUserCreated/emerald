@@ -16,6 +16,9 @@ use crate::structures::data::ConnectionPool;
 #[command]
 #[required_permissions("MANAGE_GUILD")]
 #[sub_commands(remove, add)]
+#[description = "This command allows you to send users a message in a channel of your choosing whenever a user receives the specified role. \n \
+Certain pieces of text are replaced, to see which do `greeting replacements`"]
+#[only_in(guilds)]
 async fn greeting(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     msg.reply(ctx, "Use add, remove, or list.").await?;
@@ -24,6 +27,9 @@ async fn greeting(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 }
 #[command]
 #[required_permissions("MANAGE_GUILD")]
+#[description = "Allows you to add greetings, to be sent in the channel where the command is executed."]
+#[usage = "add @helper Hi %usermention%, you received the helper role!"]
+#[only_in(guilds)]
 async fn add(ctx: &Context, msg:&Message, mut args: Args) -> CommandResult{
     let role = args.current().expect("no role found");
     let role = RoleId::from_str(role).expect("couldn't unpack roleid from argument");
@@ -39,6 +45,10 @@ async fn add(ctx: &Context, msg:&Message, mut args: Args) -> CommandResult{
 
 #[command]
 #[required_permissions("MANAGE_GUILD")]
+#[aliases("delete")]
+#[description = "Allows you to remove greetings from the channel the command is executed"]
+#[usage = "remove @helper"]
+#[only_in(guilds)]
 async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let role = args.current().expect("no role found");
     let role = RoleId::from_str(role).expect("couldn't unpack roleid from argument");

@@ -3,15 +3,19 @@ use std::{collections::HashSet, env, sync::Arc};
 use serenity::{
     async_trait,
     framework::{
-        standard::macros::group,
-        standard::macros::hook,
+        standard::macros::{help,group,hook},
         StandardFramework,
     },
     http::Http,
     model::{event::ResumedEvent, gateway::Ready},
     prelude::*,
 };
+use serenity::client::bridge::gateway::GatewayIntents;
+use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions};
+use serenity::model::guild::Member;
+use serenity::model::id::{GuildId, UserId};
 use serenity::model::prelude::Message;
+use tokio::time::{Duration, sleep};
 use tracing::{error, info};
 use tracing_subscriber::{
     EnvFilter,
@@ -20,22 +24,30 @@ use tracing_subscriber::{
 
 use commands::config::*;
 use commands::meta::*;
-use structures::data::*;
 use commands::rolegreet::*;
+use structures::data::*;
+
 use crate::helpers::*;
-
-
-use serenity::model::guild::Member;
-use serenity::client::bridge::gateway::GatewayIntents;
-use serenity::model::id::GuildId;
-use tokio::time::{sleep, Duration};
-
 
 mod structures;
 mod commands;
 mod helpers;
 
 struct Handler;
+
+#[help]
+#[lacking_permissions = "Strike"]
+async fn my_help(
+    context: &Context,
+    msg: &Message,
+    args: Args,
+    help_options: &'static HelpOptions,
+    groups: &[&'static CommandGroup],
+    owners: HashSet<UserId>,
+) -> CommandResult {
+    let _ = help_commands::with_embeds(context, msg, args, help_options, groups, owners).await;
+    Ok(())
+}
 
 //TODO greetings:
 // greetings greet a user when they receive a role - done
@@ -46,14 +58,12 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn cache_ready(&self,_ctx:Context, _guilds: Vec<GuildId>){
+    async fn cache_ready(&self, _ctx: Context, _guilds: Vec<GuildId>) {
         info!("Cache ready!");
-
     }
 
-    async fn guild_member_update(&self,ctx:Context,old_if_available: Option<Member>, new: Member){
-        greeting_handler(ctx, old_if_available,new).await.expect("problemo, friendo");
-
+    async fn guild_member_update(&self, ctx: Context, old_if_available: Option<Member>, new: Member) {
+        greeting_handler(ctx, old_if_available, new).await.expect("problemo, friendo");
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
@@ -68,6 +78,7 @@ impl EventHandler for Handler {
 #[commands(ping, prefix, die, greeting, )]
 struct General;
 
+
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().expect("Failed to load env file");
@@ -77,9 +88,9 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("Failed to start the logger");
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let http = Http::new_with_token(&token);
-    let shard_array_start :u64 = env::var("SHARD_ARRAY_START").expect("failed to load shard array start in env").parse().expect("no");
-    let shard_array_end :u64 = env::var("SHARD_ARRAY_END").expect("failed to load shard array start in env").parse().expect("no");
-    let total_shards :u64 = env::var("TOTAL_SHARDS").expect("couldnt load totals shards in env").parse().expect("no");
+    let shard_array_start: u64 = env::var("SHARD_ARRAY_START").expect("failed to load shard array start in env").parse().expect("no");
+    let shard_array_end: u64 = env::var("SHARD_ARRAY_END").expect("failed to load shard array start in env").parse().expect("no");
+    let total_shards: u64 = env::var("TOTAL_SHARDS").expect("couldnt load totals shards in env").parse().expect("no");
 
     let (owners, _bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
@@ -89,6 +100,7 @@ async fn main() {
         }
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
+
 
 
     #[hook]
@@ -121,6 +133,7 @@ async fn main() {
                 .on_mention(Some(_bot_id))
         })
         .before(before)
+        .help(&MY_HELP)
         .group(&GENERAL_GROUP);
     let mut client = Client::builder(&token)
         .framework(framework)
@@ -159,7 +172,7 @@ async fn main() {
         data.insert::<ConnectionPool>(pool);
         data.insert::<PrefixMap>(Arc::new(prefixes));
     }
-    if let Err(why) = client.start_shard_range([shard_array_start,shard_array_end],total_shards).await {
+    if let Err(why) = client.start_shard_range([shard_array_start, shard_array_end], total_shards).await {
         error!("Client error: {:?}", why);
     }
 }

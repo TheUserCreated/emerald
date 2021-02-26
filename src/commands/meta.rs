@@ -6,6 +6,7 @@ use serenity::prelude::*;
 use crate::structures::data::ShardManagerContainer;
 
 #[command]
+#[description = "Sends the ping of the current shard, measured in milliseconds."]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
     let shard_manager = match data.get::<ShardManagerContainer>() {
