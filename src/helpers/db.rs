@@ -47,7 +47,7 @@ pub async fn set_greeting_internal(pool: &PgPool, guild_id: &GuildId, channel_id
     Ok(())
 }
 
-pub async fn get_greeting(pool: &PgPool, guild_id: &GuildId, role_id: RoleId) -> CommandResult<(ChannelId, String)>{
+pub async fn get_greeting(pool: &PgPool, guild_id: &GuildId, role_id: &RoleId) -> CommandResult<(ChannelId, String)>{
      let cursor = sqlx::query!("SELECT channel_id, greeting FROM greeting_info WHERE guild_id = $1 AND role_id = $2",
             guild_id.0 as i64,
             role_id.0 as i64

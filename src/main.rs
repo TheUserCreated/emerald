@@ -37,6 +37,7 @@ struct Handler;
 
 #[help]
 #[lacking_permissions = "Strike"]
+#[available_text = ""]
 async fn my_help(
     context: &Context,
     msg: &Message,
