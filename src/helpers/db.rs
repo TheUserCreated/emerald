@@ -29,6 +29,8 @@ pub async fn fetch_prefixes(pool: &PgPool) -> CommandResult<DashMap<GuildId, Str
     Ok(prefixes)
 }
 
+
+
 pub async fn set_greeting_internal(pool: &PgPool, guild_id: &GuildId, channel_id: ChannelId,role_id: RoleId, greeting_text: String) -> CommandResult{
 
     sqlx::query!(

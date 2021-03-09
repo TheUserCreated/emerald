@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use ordinal::Ordinal;
 use serenity::{
     framework::standard::{Args, CommandResult, macros::command},
     model::prelude::*,

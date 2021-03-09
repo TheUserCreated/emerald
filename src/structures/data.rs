@@ -3,15 +3,27 @@ use std::{sync::Arc};
 use dashmap::DashMap;
 use serenity::{
     client::bridge::gateway::ShardManager,
-    model::id::{GuildId},
+    model::id::{GuildId, MessageId},
     prelude::{Mutex, TypeMapKey},
 };
 use sqlx::PgPool;
+use std::time::{Duration, Instant};
+use serenity::model::id::ChannelId;
 
 pub struct PrefixMap;
-
+pub struct GreetMap;
+pub struct ChannelMap;
 impl TypeMapKey for PrefixMap {
     type Value = Arc<DashMap<GuildId, String>>;
+}
+
+impl TypeMapKey for GreetMap {
+    type Value = Arc<DashMap<ChannelId, MessageId>>;
+}
+impl TypeMapKey for ChannelMap {
+    type Value = Arc<DashMap<ChannelId, i64>>; //This vec needs to be limited in size for performance soonTM
+                                                        //Speed up with redis?
+    
 }
 
 pub struct ShardManagerContainer;

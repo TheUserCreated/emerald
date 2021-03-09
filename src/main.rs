@@ -13,8 +13,8 @@ use serenity::{
 use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions};
 use serenity::model::guild::Member;
-use serenity::model::id::{GuildId, UserId};
-use serenity::model::prelude::Message;
+use serenity::model::id::{GuildId, UserId, MessageId, RoleId};
+use serenity::model::prelude::{Message, ChannelId};
 use tokio::time::{Duration, sleep};
 use tracing::{error, info};
 use tracing_subscriber::{
@@ -22,12 +22,17 @@ use tracing_subscriber::{
     FmtSubscriber,
 };
 
+
 use commands::config::*;
 use commands::meta::*;
 use commands::rolegreet::*;
+use commands::amnesiac::*;
 use structures::data::*;
-
+use crate::commands::amnesiac;
 use crate::helpers::*;
+use dashmap::DashMap;
+use serenity::http::routing::Route::ChannelsIdMessages;
+
 
 mod structures;
 mod commands;
@@ -66,6 +71,10 @@ impl EventHandler for Handler {
     async fn guild_member_update(&self, ctx: Context, old_if_available: Option<Member>, new: Member) {
         greeting_handler(ctx, old_if_available, new).await.expect("problemo, friendo");
     }
+    async fn message(&self, ctx: Context, message: Message){
+        info!("message sent at {}",message.timestamp.timestamp());
+        message_handler(ctx,message).await;
+    }
 
     async fn ready(&self, _: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
@@ -76,7 +85,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, prefix, die, greeting, )]
+#[commands(ping, prefix, die, greeting, autodelete)]
 struct General;
 
 
@@ -92,7 +101,6 @@ async fn main() {
     let shard_array_start: u64 = env::var("SHARD_ARRAY_START").expect("failed to load shard array start in env").parse().expect("no");
     let shard_array_end: u64 = env::var("SHARD_ARRAY_END").expect("failed to load shard array start in env").parse().expect("no");
     let total_shards: u64 = env::var("TOTAL_SHARDS").expect("couldnt load totals shards in env").parse().expect("no");
-
     let (owners, _bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
@@ -157,8 +165,10 @@ async fn main() {
                     id,
                     runner.stage,
                     runner.latency,
+
                 );
             }
+
         }
     });
 
@@ -167,11 +177,16 @@ async fn main() {
         .await
         .unwrap();
     let prefixes = db::fetch_prefixes(&pool).await.unwrap();
+    let greetmap:DashMap<ChannelId,MessageId> = DashMap::new();
+    let channelmap:DashMap<ChannelId,i64> = DashMap::new();
+
     {
         let mut data = client.data.write().await;
         data.insert::<ShardManagerContainer>(client.shard_manager.clone());
         data.insert::<ConnectionPool>(pool);
         data.insert::<PrefixMap>(Arc::new(prefixes));
+        data.insert::<GreetMap>(Arc::new(greetmap));
+        data.insert::<ChannelMap>(Arc::new(channelmap));
     }
     if let Err(why) = client.start_shard_range([shard_array_start, shard_array_end], total_shards).await {
         error!("Client error: {:?}", why);
