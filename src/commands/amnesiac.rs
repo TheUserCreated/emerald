@@ -73,9 +73,8 @@ pub async fn message_handler(ctx: Context, message: Message) {
     if let Some(result) = result {
         let minutes = result.value();
         let seconds = minutes*60;
-        let seconds = seconds as u64;
         tokio::spawn(async move {
-            sleep(Duration::from_secs(seconds)).await;
+            sleep(Duration::from_secs(seconds as u64)).await;
             message.delete(ctx).await.expect("couldn't delete message auto-delete area");
         });
     } else {

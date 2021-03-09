@@ -13,7 +13,20 @@ pub async fn get_db_pool(db_connection: String) -> CommandResult<PgPool> {
 
     Ok(pool)
 }
+pub async fn fetch_amnesiacs(pool: &PgPool )-> CommandResult<DashMap<ChannelId,i64>>{
+    let channelmap:DashMap<ChannelId,i64> = DashMap::new();
+    let cursor = sqlx::query!("SELECT channel_id,duration FROM amnesiac_messages")
+        .fetch_all(pool)
+        .await?;
 
+    for i in cursor {
+        if let Some(duration) = i.duration {
+            channelmap.insert(ChannelId::from(i.channel_id as u64), duration);
+        }
+    }
+    Ok(channelmap)
+
+}
 pub async fn fetch_prefixes(pool: &PgPool) -> CommandResult<DashMap<GuildId, String>> {
     let prefixes: DashMap<GuildId, String> = DashMap::new();
 

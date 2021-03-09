@@ -72,7 +72,6 @@ impl EventHandler for Handler {
         greeting_handler(ctx, old_if_available, new).await.expect("problemo, friendo");
     }
     async fn message(&self, ctx: Context, message: Message){
-        info!("message sent at {}",message.timestamp.timestamp());
         message_handler(ctx,message).await;
     }
 
@@ -178,7 +177,8 @@ async fn main() {
         .unwrap();
     let prefixes = db::fetch_prefixes(&pool).await.unwrap();
     let greetmap:DashMap<ChannelId,MessageId> = DashMap::new();
-    let channelmap:DashMap<ChannelId,i64> = DashMap::new();
+    let channelmap:DashMap<ChannelId,i64> = db::fetch_amnesiacs(&pool).await.unwrap();
+
 
     {
         let mut data = client.data.write().await;
