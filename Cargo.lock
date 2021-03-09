@@ -51,9 +51,9 @@ checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
 
 [[package]]
 name = "async-trait"
-version = "0.1.47"
+version = "0.1.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e098e9c493fdf92832223594d9a164f96bdf17ba81a42aff86f85c76768726a"
+checksum = "36ea56748e10732c49404c153638a15ec3d6211ec5ff35d9bb20e13b93576adf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -189,7 +189,7 @@ dependencies = [
 [[package]]
 name = "command_attr"
 version = "0.3.4"
-source = "git+https://github.com/serenity-rs/serenity.git?branch=current#3aa6aae837f01d9d7dbc80721c026bf43ff9ec92"
+source = "git+https://github.com/serenity-rs/serenity.git?branch=current#dbc40cbe6421060933b2d83176e7ec617adf5c8c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1053,9 +1053,9 @@ checksum = "b5eb417147ba9860a96cfe72a0b93bf88fee1744b5636ec99ab20c1aa9376581"
 
 [[package]]
 name = "reqwest"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0460542b551950620a3648c6aa23318ac6b3cd779114bd873209e6e8b5eb1c34"
+checksum = "bf12057f289428dbf5c591c74bf10392e4a8003f993405a902f20117019022d4"
 dependencies = [
  "base64 0.13.0",
  "bytes 1.0.1",
@@ -1184,7 +1184,7 @@ dependencies = [
 [[package]]
 name = "serenity"
 version = "0.10.4"
-source = "git+https://github.com/serenity-rs/serenity.git?branch=current#3aa6aae837f01d9d7dbc80721c026bf43ff9ec92"
+source = "git+https://github.com/serenity-rs/serenity.git?branch=current#dbc40cbe6421060933b2d83176e7ec617adf5c8c"
 dependencies = [
  "async-trait",
  "async-tungstenite",
