@@ -7,7 +7,7 @@ use serenity::{
     prelude::{Mutex, TypeMapKey},
 };
 use sqlx::PgPool;
-use std::time::{Duration, Instant};
+
 use serenity::model::id::ChannelId;
 
 pub struct PrefixMap;

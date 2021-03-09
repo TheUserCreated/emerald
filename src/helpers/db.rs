@@ -27,6 +27,19 @@ pub async fn fetch_amnesiacs(pool: &PgPool )-> CommandResult<DashMap<ChannelId,i
     Ok(channelmap)
 
 }
+
+pub async fn delete_amnesiac(pool: &PgPool, channel_id: ChannelId) -> CommandResult{
+    sqlx::query!(
+    "DELETE FROM amnesiac_messages WHERE channel_id = $1",
+    channel_id.0 as i64
+    ).execute(pool)
+        .await?;
+
+    Ok(())
+
+
+
+}
 pub async fn fetch_prefixes(pool: &PgPool) -> CommandResult<DashMap<GuildId, String>> {
     let prefixes: DashMap<GuildId, String> = DashMap::new();
 

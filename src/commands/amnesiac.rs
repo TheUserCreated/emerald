@@ -1,4 +1,4 @@
-use dashmap::DashMap;
+
 use serenity::{
     framework::standard::{Args, CommandResult, macros::command},
     model::prelude::*,
@@ -9,12 +9,13 @@ use tokio::time::{Duration, sleep};
 use tracing::{info};
 
 use crate::structures::data::{ChannelMap, ConnectionPool};
+use crate::helpers::db::delete_amnesiac;
 
 #[command]
 #[required_permissions("MANAGE_GUILD")]
 #[only_in(guilds)]
 #[sub_commands(set, check, remove)]
-async fn autodelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+async fn autodelete(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult {
     msg.reply(ctx,"Not enough arguments! Run `help autodelete` to see how to use this command.").await?;
     //let channel_id = args.current().expect("no role found");
     //let channel_id = ChannelId::from_str(channel_id).expect("couldn't unpack roleid from argument");
@@ -27,13 +28,29 @@ async fn autodelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandResu
 #[command]
 #[only_in(guilds)]
 #[aliases("delete", "unset")]
-async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult{
+#[required_permissions("MANAGE_GUILD")]
+async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
+     let (pool, amnesiacs) = {
+        let data = ctx.data.read().await;
+
+        let pool = data.get::<ConnectionPool>().cloned().unwrap();
+        let amnesiacs = data.get::<ChannelMap>().cloned().unwrap();
+
+        (pool, amnesiacs)
+
+    };
+    let channel_id = args.current().expect("no channel found");
+    let channel_id = ChannelId::from_str(channel_id).expect("couldn't unpack channelid from argument");
+    delete_amnesiac(&pool, channel_id).await?;
+    amnesiacs.remove(&channel_id);
+    msg.reply(ctx, "Auto-delete removed for specified channel.").await?;
+
     Ok(())
 }
 
 #[command]
 #[only_in(guilds)]
-async fn check(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+async fn check(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let channelmap = {
         let data = ctx.data.read().await;
         let amnesiacs = data.get::<ChannelMap>().cloned().unwrap();

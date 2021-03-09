@@ -13,7 +13,7 @@ use serenity::{
 use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions};
 use serenity::model::guild::Member;
-use serenity::model::id::{GuildId, UserId, MessageId, RoleId};
+use serenity::model::id::{GuildId, UserId, MessageId};
 use serenity::model::prelude::{Message, ChannelId};
 use tokio::time::{Duration, sleep};
 use tracing::{error, info};
@@ -28,10 +28,10 @@ use commands::meta::*;
 use commands::rolegreet::*;
 use commands::amnesiac::*;
 use structures::data::*;
-use crate::commands::amnesiac;
+
 use crate::helpers::*;
 use dashmap::DashMap;
-use serenity::http::routing::Route::ChannelsIdMessages;
+
 
 
 mod structures;
