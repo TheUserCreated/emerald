@@ -1,3 +1,5 @@
+#![feature(map_into_keys_values)]
+
 use std::{collections::HashSet, env, sync::Arc};
 
 use serenity::{
@@ -146,7 +148,7 @@ async fn main() {
     let mut client = Client::builder(&token)
         .framework(framework)
         .event_handler(Handler)
-        .intents(GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_PRESENCES)
+        .intents(GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_PRESENCES | GatewayIntents::GUILD_MESSAGE_REACTIONS)
         .await
         .expect("Err creating client");
     let manager = client.shard_manager.clone();
