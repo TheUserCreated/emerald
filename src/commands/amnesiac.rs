@@ -11,8 +11,6 @@ use crate::structures::data::{ChannelMap, ConnectionPool};
 use crate::helpers::db::delete_amnesiac;
 use serenity_utils::{
     menu::{Menu, MenuOptions},
-    Error,
-    prompt::reaction_prompt,
 };
 use serenity::builder::CreateMessage;
 use dashmap::DashMap;
@@ -81,10 +79,13 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
     };
     let mut pages: Vec<CreateMessage> = Vec::new();
     for (key,value) in relevant_channels.into_iter() {
+        let channel_name = ChannelId(key.0).name(ctx).await.expect("channel without a name");
         let mut page = CreateMessage::default();
         let response = format!("Channel {} has auto-delete set for {} minute(s).", ChannelId(key.0).mention(),value);
-        page.content("Auto-delete information.").embed(|e|{
+
+        page.embed(|e|{
             e.description(response);
+            e.title(channel_name);
             e
         });
         pages.push(page);
@@ -116,27 +117,6 @@ async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     amnesiacs.remove(&channel_id);
     msg.reply(ctx, "Auto-delete removed for specified channel.").await?;
 
-    Ok(())
-}
-
-
-async fn check(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let channelmap = {
-        let data = ctx.data.read().await;
-        let amnesiacs = data.get::<ChannelMap>().cloned().unwrap();
-        amnesiacs
-    };
-
-    let channel_id = args.current().expect("no channel found");
-    let channel_id = ChannelId::from_str(channel_id).expect("couldn't unpack channelid from argument");
-    let result = channelmap.get(&channel_id);
-    if let Some(result) = result {
-        let minutes = result.value();
-        let response = format!("The channel {} has auto-delete enabled, with a timer of {} minute(s).", channel_id.name(ctx).await.expect("channel doesnt have a name?"), minutes);
-        msg.reply(ctx, response).await?;
-    } else {
-        msg.reply(ctx, "That channel doesn't seem to have auto-delete enabled").await?;
-    }
     Ok(())
 }
 
