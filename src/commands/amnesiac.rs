@@ -21,6 +21,7 @@ use std::sync::Arc;
 #[required_permissions("MANAGE_GUILD")]
 #[only_in(guilds)]
 #[sub_commands(set, list, remove)]
+#[description = "Set of commands related to automatically deleting messages sent in channels. Cannot be used without a sub-command"]
 async fn autodelete(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult {
     msg.reply(ctx, "Invalid arguments! Run `help autodelete` to see how to use this command.").await?;
     //let channel_id = args.current().expect("no role found");
@@ -35,6 +36,7 @@ async fn autodelete(ctx: &Context, msg: &Message, mut _args: Args) -> CommandRes
 #[command]
 #[only_in(guilds)]
 #[required_permissions("MANAGE_CHANNELS")]
+#[description= "Lists all channels in this server that have auto-delete enabled."]
 async fn list(ctx: &Context, msg: &Message) -> CommandResult {
     let channel_list = msg.guild(ctx).await.expect("got a message from a guild that doesn't exist").channels;
     let mut channels: Vec<ChannelId> = Vec::with_capacity(500);
@@ -102,6 +104,8 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
 #[only_in(guilds)]
 #[aliases("delete", "unset")]
 #[required_permissions("MANAGE_GUILD")]
+#[usage = "#channelname"]
+#[description = "Removes auto-delete from a channel."]
 async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let (pool, amnesiacs) = {
         let data = ctx.data.read().await;
@@ -125,6 +129,8 @@ async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[required_permissions("MANAGE_GUILD")]
 #[only_in(guilds)]
 #[aliases("add")]
+#[description = "Enables auto-delete for a channel, with the amount of time messages exist specified in minutes."]
+#[usage = "#ChannelName 10 (sets #ChannelName to have messages deleted after 10 minutes"]
 async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let channel_id = args.current().expect("no role found");
     let channel_id = ChannelId::from_str(channel_id).expect("couldn't unpack roleid from argument");

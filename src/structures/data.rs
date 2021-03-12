@@ -21,9 +21,7 @@ impl TypeMapKey for GreetMap {
     type Value = Arc<DashMap<ChannelId, MessageId>>;
 }
 impl TypeMapKey for ChannelMap {
-    type Value = Arc<DashMap<ChannelId, i64>>; //This vec needs to be limited in size for performance soonTM
-                                                        //Speed up with redis?
-    
+    type Value = Arc<DashMap<ChannelId, i64>>;
 }
 
 pub struct ShardManagerContainer;

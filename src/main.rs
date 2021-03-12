@@ -13,7 +13,7 @@ use serenity::{
     prelude::*,
 };
 use serenity::client::bridge::gateway::GatewayIntents;
-use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions};
+use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions, HelpBehaviour};
 use serenity::model::guild::Member;
 use serenity::model::id::{GuildId, UserId, MessageId};
 use serenity::model::prelude::{Message, ChannelId};
