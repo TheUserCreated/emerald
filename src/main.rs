@@ -13,7 +13,7 @@ use serenity::{
     prelude::*,
 };
 use serenity::client::bridge::gateway::GatewayIntents;
-use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions, HelpBehaviour};
+use serenity::framework::standard::{Args, CommandGroup, CommandResult, help_commands, HelpOptions};
 use serenity::model::guild::Member;
 use serenity::model::id::{GuildId, UserId, MessageId};
 use serenity::model::prelude::{Message, ChannelId};
@@ -30,6 +30,7 @@ use commands::meta::*;
 use commands::rolegreet::*;
 use commands::amnesiac::*;
 use structures::data::*;
+use commands::rolecolour::*;
 
 use crate::helpers::*;
 use dashmap::DashMap;
@@ -86,7 +87,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, prefix, die, greeting, autodelete)]
+#[commands(ping, prefix, die, greeting, autodelete, getcolour)]
 struct General;
 
 
