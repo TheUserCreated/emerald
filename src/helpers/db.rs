@@ -1,8 +1,7 @@
 use dashmap::DashMap;
+use serenity::model::id::{ChannelId, RoleId};
 use serenity::{framework::standard::CommandResult, model::id::GuildId};
 use sqlx::postgres::{PgPool, PgPoolOptions};
-use serenity::model::id::{ChannelId, RoleId};
-
 
 pub async fn get_db_pool(db_connection: String) -> CommandResult<PgPool> {
     let connection_string = &db_connection;
@@ -13,8 +12,8 @@ pub async fn get_db_pool(db_connection: String) -> CommandResult<PgPool> {
 
     Ok(pool)
 }
-pub async fn fetch_amnesiacs(pool: &PgPool )-> CommandResult<DashMap<ChannelId,i64>>{
-    let channelmap:DashMap<ChannelId,i64> = DashMap::new();
+pub async fn fetch_amnesiacs(pool: &PgPool) -> CommandResult<DashMap<ChannelId, i64>> {
+    let channelmap: DashMap<ChannelId, i64> = DashMap::new();
     let cursor = sqlx::query!("SELECT channel_id,duration FROM amnesiac_messages")
         .fetch_all(pool)
         .await?;
@@ -25,20 +24,17 @@ pub async fn fetch_amnesiacs(pool: &PgPool )-> CommandResult<DashMap<ChannelId,i
         }
     }
     Ok(channelmap)
-
 }
 
-pub async fn delete_amnesiac(pool: &PgPool, channel_id: ChannelId) -> CommandResult{
+pub async fn delete_amnesiac(pool: &PgPool, channel_id: ChannelId) -> CommandResult {
     sqlx::query!(
-    "DELETE FROM amnesiac_messages WHERE channel_id = $1",
-    channel_id.0 as i64
-    ).execute(pool)
-        .await?;
+        "DELETE FROM amnesiac_messages WHERE channel_id = $1",
+        channel_id.0 as i64
+    )
+    .execute(pool)
+    .await?;
 
     Ok(())
-
-
-
 }
 pub async fn fetch_prefixes(pool: &PgPool) -> CommandResult<DashMap<GuildId, String>> {
     let prefixes: DashMap<GuildId, String> = DashMap::new();
@@ -55,52 +51,97 @@ pub async fn fetch_prefixes(pool: &PgPool) -> CommandResult<DashMap<GuildId, Str
     Ok(prefixes)
 }
 
-
-
-pub async fn set_greeting_internal(pool: &PgPool, guild_id: &GuildId, channel_id: ChannelId,role_id: RoleId, greeting_text: String) -> CommandResult{
-
+pub async fn set_greeting_internal(
+    pool: &PgPool,
+    guild_id: &GuildId,
+    channel_id: ChannelId,
+    role_id: RoleId,
+    greeting_text: String,
+) -> CommandResult {
     sqlx::query!(
-            "INSERT INTO greeting_info (guild_id,channel_id,role_id,greeting)\
+        "INSERT INTO greeting_info (guild_id,channel_id,role_id,greeting)\
             VALUES ($1,$2,$3,$4)\
             ON CONFLICT (guild_id) DO UPDATE \
-            SET greeting = $4;"   ,
-            guild_id.0 as i64,
-            channel_id.0 as i64,
-            role_id.0 as i64,
-            greeting_text
-
-        )
-            .execute(pool)
-            .await?;
+            SET greeting = $4;",
+        guild_id.0 as i64,
+        channel_id.0 as i64,
+        role_id.0 as i64,
+        greeting_text
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
-pub async fn get_greeting(pool: &PgPool, guild_id: &GuildId, role_id: &RoleId) -> CommandResult<(ChannelId, String)>{
-     let cursor = sqlx::query!("SELECT channel_id, greeting FROM greeting_info WHERE guild_id = $1 AND role_id = $2",
-            guild_id.0 as i64,
-            role_id.0 as i64
-    ).fetch_all(pool).await?;
+pub async fn get_greeting(
+    pool: &PgPool,
+    guild_id: &GuildId,
+    role_id: &RoleId,
+) -> CommandResult<(ChannelId, String)> {
+    let cursor = sqlx::query!(
+        "SELECT channel_id, greeting FROM greeting_info WHERE guild_id = $1 AND role_id = $2",
+        guild_id.0 as i64,
+        role_id.0 as i64
+    )
+    .fetch_all(pool)
+    .await?;
 
     let mut channel_id: i64 = 0;
     let mut greeting: String = "".to_string();
-    for items in cursor{
+    for items in cursor {
         channel_id = items.channel_id;
         greeting = items.greeting;
     }
-    let channel_id= channel_id as u64;
+    let channel_id = channel_id as u64;
 
-    return Ok((ChannelId::from(channel_id), greeting))
-
-
+    return Ok((ChannelId::from(channel_id), greeting));
 }
 
-pub async fn remove_greeting_internal(pool: &PgPool, guild_id: &GuildId, channel_id: &ChannelId,role_id: &RoleId) -> CommandResult{
-    sqlx::query!("DELETE FROM greeting_info WHERE guild_id = $1 AND channel_id = $2 AND role_id = $3",
-    guild_id.0 as i64,
-    channel_id.0 as i64,
-    role_id.0 as i64,
+pub async fn remove_greeting_internal(
+    pool: &PgPool,
+    guild_id: &GuildId,
+    channel_id: &ChannelId,
+    role_id: &RoleId,
+) -> CommandResult {
+    sqlx::query!(
+        "DELETE FROM greeting_info WHERE guild_id = $1 AND channel_id = $2 AND role_id = $3",
+        guild_id.0 as i64,
+        channel_id.0 as i64,
+        role_id.0 as i64,
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+//NOTE: it seems ill have to re-implement removal functions for all situations that need to trigger a deletion
+//      there might be a cleaner way to do this using generics, if i figure that out expect these functions to go bye-bye
+pub async fn remove_greeting_by_channel(pool: &PgPool, channel_id: &ChannelId) -> CommandResult {
+    sqlx::query!(
+        "DELETE FROM greeting_info WHERE channel_id = $1 ",
+        channel_id.0 as i64,
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn remove_greeting_by_guild(pool: &PgPool, guild_id: &GuildId) -> CommandResult {
+    sqlx::query!(
+        "DELETE FROM greeting_info WHERE guild_id = $1 ",
+        guild_id.0 as i64,
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn remove_greeting_by_role(pool: &PgPool, role_id: &RoleId) -> CommandResult {
+    sqlx::query!(
+        "DELETE FROM greeting_info WHERE role_id = $1",
+        role_id.0 as i64,
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }

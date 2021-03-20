@@ -8,7 +8,7 @@ use serenity::framework::standard::{
 };
 use serenity::model::guild::Member;
 use serenity::model::id::{GuildId, MessageId, UserId};
-use serenity::model::prelude::{ChannelId, Message};
+use serenity::model::prelude::{ChannelId, GuildChannel, Message};
 use serenity::{
     async_trait,
     framework::{
@@ -66,6 +66,11 @@ impl EventHandler for Handler {
         info!("Cache ready!");
     }
 
+    async fn channel_delete(&self, ctx: Context, channel: &GuildChannel) {
+        //TODO:
+        // when a channel is deleted, delete all greetings configured for that channel
+        // also delete any amnesiac settings for that channel.
+    }
     async fn guild_member_update(
         &self,
         ctx: Context,
@@ -79,7 +84,6 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, message: Message) {
         message_handler(ctx, message).await;
     }
-
     async fn ready(&self, _: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
     }
