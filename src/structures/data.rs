@@ -1,4 +1,4 @@
-use std::{sync::Arc};
+use std::sync::Arc;
 
 use dashmap::DashMap;
 use serenity::{
@@ -12,7 +12,7 @@ use serenity::model::id::ChannelId;
 
 pub struct PrefixMap;
 pub struct GreetMap;
-pub struct ChannelMap;
+pub struct AmnesiaMap;
 impl TypeMapKey for PrefixMap {
     type Value = Arc<DashMap<GuildId, String>>;
 }
@@ -20,7 +20,7 @@ impl TypeMapKey for PrefixMap {
 impl TypeMapKey for GreetMap {
     type Value = Arc<DashMap<ChannelId, MessageId>>;
 }
-impl TypeMapKey for ChannelMap {
+impl TypeMapKey for AmnesiaMap {
     type Value = Arc<DashMap<ChannelId, i64>>;
 }
 

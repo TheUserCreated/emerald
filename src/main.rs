@@ -7,8 +7,8 @@ use serenity::framework::standard::{
     help_commands, Args, CommandGroup, CommandResult, HelpOptions,
 };
 use serenity::model::guild::Member;
-use serenity::model::id::{GuildId, MessageId, UserId};
-use serenity::model::prelude::{ChannelId, GuildChannel, Message};
+use serenity::model::id::{GuildId, MessageId, RoleId, UserId};
+use serenity::model::prelude::{ChannelId, GuildChannel, Message, Role};
 use serenity::{
     async_trait,
     framework::{
@@ -30,11 +30,13 @@ use commands::rolecolour::*;
 use commands::rolegreet::*;
 use structures::data::*;
 
+use crate::helpers::db::remove_greeting_by_channel;
 use crate::helpers::*;
 use dashmap::DashMap;
 
 mod commands;
 mod helpers;
+mod logging;
 mod structures;
 
 struct Handler;
@@ -67,10 +69,21 @@ impl EventHandler for Handler {
     }
 
     async fn channel_delete(&self, ctx: Context, channel: &GuildChannel) {
-        //TODO:
-        // when a channel is deleted, delete all greetings configured for that channel
-        // also delete any amnesiac settings for that channel.
+        let (channelmap, greetmap, pool) = {
+            let data = ctx.data.read().await;
+            let channelmap = data.get::<AmnesiaMap>().cloned().unwrap();
+            let greetmap = data.get::<GreetMap>().cloned().unwrap();
+            let pool = data.get::<ConnectionPool>().cloned().unwrap();
+
+            (channelmap, greetmap, pool)
+        };
+        channelmap.remove(&channel.id);
+        greetmap.remove(&channel.id);
+        remove_greeting_by_channel(&pool, &channel.id)
+            .await
+            .expect("couldn't remove data on channel delete");
     }
+
     async fn guild_member_update(
         &self,
         ctx: Context,
@@ -80,6 +93,14 @@ impl EventHandler for Handler {
         greeting_handler(ctx, old_if_available, new)
             .await
             .expect("problemo, friendo");
+    }
+    async fn guild_role_delete(
+        &self,
+        ctx: Context,
+        guild_id: GuildId,
+        removed_role_id: RoleId,
+        removed_role_data_if_available: Option<Role>,
+    ) {
     }
     async fn message(&self, ctx: Context, message: Message) {
         message_handler(ctx, message).await;
@@ -114,7 +135,7 @@ async fn main() {
         .parse()
         .expect("no");
     let total_shards: u64 = env::var("TOTAL_SHARDS")
-        .expect("couldnt load totals shards in env")
+        .expect("couldn't load totals shards in env")
         .parse()
         .expect("no");
     let (owners, _bot_id) = match http.get_current_application_info().await {
@@ -176,7 +197,6 @@ async fn main() {
         .await
         .expect("Err creating client");
     let manager = client.shard_manager.clone();
-
     tokio::spawn(async move {
         loop {
             sleep(Duration::from_secs(30)).await;
@@ -206,7 +226,7 @@ async fn main() {
         data.insert::<ConnectionPool>(pool);
         data.insert::<PrefixMap>(Arc::new(prefixes));
         data.insert::<GreetMap>(Arc::new(greetmap));
-        data.insert::<ChannelMap>(Arc::new(channelmap));
+        data.insert::<AmnesiaMap>(Arc::new(channelmap));
     }
     if let Err(why) = client
         .start_shard_range([shard_array_start, shard_array_end], total_shards)

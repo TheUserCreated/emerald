@@ -1,20 +1,18 @@
+use serenity::static_assertions::_core::str::FromStr;
 use serenity::{
-    framework::standard::{Args, CommandResult, macros::command},
+    framework::standard::{macros::command, Args, CommandResult},
     model::prelude::*,
     prelude::*,
 };
-use serenity::static_assertions::_core::str::FromStr;
-use tokio::time::{Duration, sleep};
-use tracing::{info};
+use tokio::time::{sleep, Duration};
+use tracing::info;
 
-use crate::structures::data::{ChannelMap, ConnectionPool};
 use crate::helpers::db::delete_amnesiac;
-use serenity_utils::{
-    menu::{Menu, MenuOptions},
-};
-use serenity::builder::CreateMessage;
+use crate::structures::data::{AmnesiaMap, ConnectionPool};
 use dashmap::DashMap;
+use serenity::builder::CreateMessage;
 use serenity_utils::menu::*;
+use serenity_utils::menu::{Menu, MenuOptions};
 use std::sync::Arc;
 
 #[command]
@@ -23,7 +21,11 @@ use std::sync::Arc;
 #[sub_commands(set, list, remove)]
 #[description = "Set of commands related to automatically deleting messages sent in channels. Cannot be used without a sub-command"]
 async fn autodelete(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult {
-    msg.reply(ctx, "Invalid arguments! Run `help autodelete` to see how to use this command.").await?;
+    msg.reply(
+        ctx,
+        "Invalid arguments! Run `help autodelete` to see how to use this command.",
+    )
+    .await?;
     //let channel_id = args.current().expect("no role found");
     //let channel_id = ChannelId::from_str(channel_id).expect("couldn't unpack roleid from argument");
     //args.advance();
@@ -36,9 +38,13 @@ async fn autodelete(ctx: &Context, msg: &Message, mut _args: Args) -> CommandRes
 #[command]
 #[only_in(guilds)]
 #[required_permissions("MANAGE_CHANNELS")]
-#[description= "Lists all channels in this server that have auto-delete enabled."]
+#[description = "Lists all channels in this server that have auto-delete enabled."]
 async fn list(ctx: &Context, msg: &Message) -> CommandResult {
-    let channel_list = msg.guild(ctx).await.expect("got a message from a guild that doesn't exist").channels;
+    let channel_list = msg
+        .guild(ctx)
+        .await
+        .expect("got a message from a guild that doesn't exist")
+        .channels;
     let mut channels: Vec<ChannelId> = Vec::with_capacity(500);
 
     for i in channel_list.into_keys() {
@@ -47,7 +53,7 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
     let amnesiacs = {
         let data = ctx.data.read().await;
 
-        let amnesiacs = data.get::<ChannelMap>().cloned().unwrap();
+        let amnesiacs = data.get::<AmnesiaMap>().cloned().unwrap();
 
         amnesiacs
     };
@@ -59,8 +65,7 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
         }
     }
 
-
-        let controls = vec![
+    let controls = vec![
         Control::new(
             ReactionType::from('◀'),
             Arc::new(|m, r| Box::pin(prev_page(m, r))),
@@ -73,19 +78,25 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
             ReactionType::from('▶'),
             Arc::new(|m, r| Box::pin(next_page(m, r))),
         ),
-
     ];
     let options = MenuOptions {
         controls,
         ..Default::default()
     };
     let mut pages: Vec<CreateMessage> = Vec::new();
-    for (key,value) in relevant_channels.into_iter() {
-        let channel_name = ChannelId(key.0).name(ctx).await.expect("channel without a name");
+    for (key, value) in relevant_channels.into_iter() {
+        let channel_name = ChannelId(key.0)
+            .name(ctx)
+            .await
+            .expect("channel without a name");
         let mut page = CreateMessage::default();
-        let response = format!("Channel {} has auto-delete set for {} minute(s).", ChannelId(key.0).mention(),value);
+        let response = format!(
+            "Channel {} has auto-delete set for {} minute(s).",
+            ChannelId(key.0).mention(),
+            value
+        );
 
-        page.embed(|e|{
+        page.embed(|e| {
             e.description(response);
             e.title(channel_name);
             e
@@ -93,12 +104,10 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
         pages.push(page);
     }
 
-
     let menu = Menu::new(ctx, msg, &pages.as_ref(), options);
     let _ = menu.run().await?;
     Ok(())
 }
-
 
 #[command]
 #[only_in(guilds)]
@@ -111,19 +120,20 @@ async fn remove(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         let data = ctx.data.read().await;
 
         let pool = data.get::<ConnectionPool>().cloned().unwrap();
-        let amnesiacs = data.get::<ChannelMap>().cloned().unwrap();
+        let amnesiacs = data.get::<AmnesiaMap>().cloned().unwrap();
 
         (pool, amnesiacs)
     };
     let channel_id = args.current().expect("no channel found");
-    let channel_id = ChannelId::from_str(channel_id).expect("couldn't unpack channelid from argument");
+    let channel_id =
+        ChannelId::from_str(channel_id).expect("couldn't unpack channelid from argument");
     delete_amnesiac(&pool, channel_id).await?;
     amnesiacs.remove(&channel_id);
-    msg.reply(ctx, "Auto-delete removed for specified channel.").await?;
+    msg.reply(ctx, "Auto-delete removed for specified channel.")
+        .await?;
 
     Ok(())
 }
-
 
 #[command]
 #[required_permissions("MANAGE_GUILD")]
@@ -142,24 +152,27 @@ async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let data = ctx.data.read().await;
 
         let pool = data.get::<ConnectionPool>().cloned().unwrap();
-        let amnesiacs = data.get::<ChannelMap>().cloned().unwrap();
+        let amnesiacs = data.get::<AmnesiaMap>().cloned().unwrap();
 
         (pool, amnesiacs)
     };
     amnesiacs.insert(channel_id, time);
     sqlx::query!(
-            "INSERT INTO amnesiac_messages (channel_id,duration)\
+        "INSERT INTO amnesiac_messages (channel_id,duration)\
             VALUES ($2,$1)\
             ON CONFLICT (channel_id) DO UPDATE \
-            SET duration = $1;"   ,
-            time,
-            channel_id.0 as i64
-        )
-        .execute(&pool)
-        .await?;
-    let response = format!("Set the message auto-delete timer for {} to {} minutes.", channel_id.name(ctx).await.expect("oops"), time);
+            SET duration = $1;",
+        time,
+        channel_id.0 as i64
+    )
+    .execute(&pool)
+    .await?;
+    let response = format!(
+        "Set the message auto-delete timer for {} to {} minutes.",
+        channel_id.name(ctx).await.expect("oops"),
+        time
+    );
     msg.reply(ctx, response).await?;
-
 
     Ok(())
 }
@@ -167,7 +180,7 @@ async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 pub async fn message_handler(ctx: Context, message: Message) {
     let channelmap = {
         let data = ctx.data.read().await;
-        let channelmap = data.get::<ChannelMap>().cloned().unwrap();
+        let channelmap = data.get::<AmnesiaMap>().cloned().unwrap();
 
         channelmap
     };
@@ -177,10 +190,12 @@ pub async fn message_handler(ctx: Context, message: Message) {
         let seconds = minutes * 60;
         tokio::spawn(async move {
             sleep(Duration::from_secs(seconds as u64)).await;
-            message.delete(ctx).await.expect("couldn't delete message auto-delete area");
+            message
+                .delete(ctx)
+                .await
+                .expect("couldn't delete message auto-delete area");
         });
     } else {
         return;
     }
 }
-
