@@ -33,6 +33,7 @@ use structures::data::*;
 use crate::helpers::db::remove_greeting_by_channel;
 use crate::helpers::*;
 use dashmap::DashMap;
+use logging::log::*;
 
 mod commands;
 mod helpers;
@@ -82,6 +83,7 @@ impl EventHandler for Handler {
         remove_greeting_by_channel(&pool, &channel.id)
             .await
             .expect("couldn't remove data on channel delete");
+        channel_delete_log(ctx, channel).await;
     }
 
     async fn guild_member_update(
@@ -200,10 +202,8 @@ async fn main() {
     tokio::spawn(async move {
         loop {
             sleep(Duration::from_secs(30)).await;
-
             let lock = manager.lock().await;
             let shard_runners = lock.runners.lock().await;
-
             for (id, runner) in shard_runners.iter() {
                 println!(
                     "Shard ID {} is {} with a latency of {:?}",

@@ -13,6 +13,16 @@ use serenity::model::id::ChannelId;
 pub struct PrefixMap;
 pub struct GreetMap;
 pub struct AmnesiaMap;
+pub struct GuildChannelMap;
+pub struct LogMap;
+//this could all be done in redis for free improvement
+
+impl TypeMapKey for GuildChannelMap {
+    type Value = Arc<DashMap<GuildId, ChannelId>>;
+}
+impl TypeMapKey for LogMap {
+    type Value = Arc<DashMap<ChannelId, Vec<u8>>>;
+}
 impl TypeMapKey for PrefixMap {
     type Value = Arc<DashMap<GuildId, String>>;
 }
