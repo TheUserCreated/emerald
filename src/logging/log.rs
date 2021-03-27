@@ -1,4 +1,4 @@
-use crate::helpers::db::{log_set, log_update_id};
+use crate::helpers::db::{enable_log_event, log_set, log_update_id};
 use crate::structures::data::{ConnectionPool, LogMap};
 use serenity::static_assertions::_core::str::FromStr;
 use serenity::utils::MessageBuilder;
@@ -102,7 +102,11 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     if logmap.get(&guild_id).is_some() {
         log_update_id(&pool, guild_id, channel_id)
             .await
-            .expect("couldnt set log channel");
+            .expect("couldn't set log channel");
+        logmap.alter(&guild_id, |_, mut v| {
+            v.log_channel = channel_id.0;
+            v
+        })
     } else {
         log_set(&pool, guild_id, channel_id)
             .await
@@ -132,7 +136,15 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
                 v.message_delete = true;
                 v
             },
+        );
+        enable_log_event(
+            &pool,
+            msg.guild_id.expect("message from deleted guild"),
+            13,
+            true,
         )
+        .await?;
     }
+
     Ok(())
 }

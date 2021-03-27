@@ -45,15 +45,15 @@ pub async fn fetch_logdata(pool: &PgPool) -> CommandResult<DashMap<GuildId, LogC
 }
 pub async fn log_update_id(
     pool: &PgPool,
-    _guild_id: GuildId,
+    guild_id: GuildId,
     channel_id: ChannelId,
 ) -> CommandResult {
     sqlx::query!(
-        "INSERT INTO logging (channel_id)\
-    VALUES ($1)\
-    ON CONFLICT (channel_id) DO UPDATE \
-    SET channel_id = $1;",
-        channel_id.0 as i64
+        "UPDATE logging \
+        SET channel_id = $1\
+        WHERE guild_id = $2",
+        channel_id.0 as i64,
+        guild_id.0 as i64
     )
     .execute(pool)
     .await?;
@@ -83,6 +83,35 @@ pub async fn log_set(pool: &PgPool, guild_id: GuildId, channel_id: ChannelId) ->
             false,
             false,
             ).execute(pool).await?;
+
+    Ok(())
+}
+
+pub async fn enable_log_event(
+    pool: &PgPool,
+    guild_id: GuildId,
+    event: u8,
+    value: bool,
+) -> CommandResult {
+    match event {
+        1 => {}
+        2 => {}
+        3 => {} //placeholders for now.
+        13 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET message_delete = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        _ => {
+            info!("tried to enable a log event that doesnt exist?")
+        }
+    }
 
     Ok(())
 }
