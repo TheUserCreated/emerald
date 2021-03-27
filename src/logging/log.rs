@@ -87,14 +87,8 @@ pub async fn log(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult
 }
 
 #[command]
-#[owners_only]
-async fn debug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    Ok(())
-}
-
-#[command]
 #[required_permissions("MANAGE_GUILD")]
-pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+pub async fn set(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let channel_id = args.current().expect("no channel found");
     let channel_id =
@@ -147,7 +141,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 }
 #[command]
 #[required_permissions("MANAGE_GUILD")]
-pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+pub async fn add(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let log_id: u64 = args.parse().expect("bad arguments");
     let (pool, logmap) = {
         let data = ctx.data.read().await;

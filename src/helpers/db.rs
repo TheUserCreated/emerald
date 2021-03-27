@@ -249,16 +249,6 @@ pub async fn remove_greeting_by_channel(pool: &PgPool, channel_id: &ChannelId) -
     Ok(())
 }
 
-pub async fn remove_greeting_by_guild(pool: &PgPool, guild_id: &GuildId) -> CommandResult {
-    sqlx::query!(
-        "DELETE FROM greeting_info WHERE guild_id = $1 ",
-        guild_id.0 as i64,
-    )
-    .execute(pool)
-    .await?;
-    Ok(())
-}
-
 pub async fn remove_greeting_by_role(pool: &PgPool, role_id: &RoleId) -> CommandResult {
     sqlx::query!(
         "DELETE FROM greeting_info WHERE role_id = $1",
