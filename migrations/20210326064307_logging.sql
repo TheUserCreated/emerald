@@ -18,7 +18,6 @@ CREATE TABLE public.logging
     message_delete bool NOT NULL,
     message_delete_bulk bool NOT NULL,
     webhook_update bool NOT NULL,
-
     PRIMARY KEY (guild_id)
 
 

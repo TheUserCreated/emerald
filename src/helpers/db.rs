@@ -1,7 +1,9 @@
+use crate::structures::data::LogConf;
 use dashmap::DashMap;
 use serenity::model::id::{ChannelId, RoleId};
 use serenity::{framework::standard::CommandResult, model::id::GuildId};
 use sqlx::postgres::{PgPool, PgPoolOptions};
+use tracing::info;
 
 pub async fn get_db_pool(db_connection: String) -> CommandResult<PgPool> {
     let connection_string = &db_connection;
@@ -12,6 +14,97 @@ pub async fn get_db_pool(db_connection: String) -> CommandResult<PgPool> {
 
     Ok(pool)
 }
+pub async fn fetch_logdata(pool: &PgPool) -> CommandResult<DashMap<GuildId, LogConf>> {
+    let logmap: DashMap<GuildId, LogConf> = DashMap::new();
+    let cursor = sqlx::query!("SELECT * FROM logging;")
+        .fetch_all(pool)
+        .await?;
+    for element in cursor {
+        let guild_id = GuildId::from(element.guild_id as u64);
+        let conf = LogConf {
+            log_channel: element.channel_id as u64,
+            channel_create: element.channel_create as bool,
+            channel_update: element.channel_update as bool,
+            ban_add: element.ban_add as bool,
+            ban_remove: element.ban_remove as bool,
+            member_join: element.member_join as bool,
+            member_remove: element.member_remove as bool,
+            role_create: element.role_create as bool,
+            role_update: element.role_update as bool,
+            role_delete: element.role_delete as bool,
+            invite_create: element.invite_create as bool,
+            invite_delete: element.invite_delete as bool,
+            message_edit: element.message_edit as bool,
+            message_delete: element.message_delete as bool,
+            message_delete_bulk: element.message_delete_bulk as bool,
+            webhook_update: element.webhook_update as bool,
+        };
+        logmap.insert(guild_id, conf);
+    }
+    Ok(logmap)
+}
+pub async fn log_update_id(
+    pool: &PgPool,
+    _guild_id: GuildId,
+    channel_id: ChannelId,
+) -> CommandResult {
+    sqlx::query!(
+        "INSERT INTO logging (channel_id)\
+    VALUES ($1)\
+    ON CONFLICT (channel_id) DO UPDATE \
+    SET channel_id = $1;",
+        channel_id.0 as i64
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn log_set(pool: &PgPool, guild_id: GuildId, channel_id: ChannelId) -> CommandResult {
+    sqlx::query!("INSERT INTO logging (guild_id,channel_id,\
+    channel_create,channel_update,ban_add,ban_remove,member_join,member_remove,role_create,\
+    role_update,role_delete,invite_create,invite_delete,message_edit,message_delete,message_delete_bulk,webhook_update)\
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)",
+            guild_id.0 as i64,
+            channel_id.0 as i64,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            ).execute(pool).await?;
+
+    Ok(())
+}
+//internal representation of log IDs
+/*
+   channel_create 1
+   channel_update 2
+   ban_add 3
+   ban_remove 4
+   member_join 5
+   member_remove 6
+   role_create 7
+   role_update 8
+   role_delete 9
+   invite_create 10
+   invite_delete 11
+   message_edit 12
+   message_delete 13
+   message_delete_bulk 14
+   webhook_update 15
+*/
+
 pub async fn fetch_amnesiacs(pool: &PgPool) -> CommandResult<DashMap<ChannelId, i64>> {
     let channelmap: DashMap<ChannelId, i64> = DashMap::new();
     let cursor = sqlx::query!("SELECT channel_id,duration FROM amnesiac_messages")

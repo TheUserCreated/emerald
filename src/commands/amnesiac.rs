@@ -45,7 +45,7 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
         .await
         .expect("got a message from a guild that doesn't exist")
         .channels;
-    let mut channels: Vec<ChannelId> = Vec::with_capacity(500);
+    let mut channels: Vec<ChannelId> = Vec::with_capacity(500); //500 is the max number of channels in a discord server
 
     for i in channel_list.into_keys() {
         channels.push(i);

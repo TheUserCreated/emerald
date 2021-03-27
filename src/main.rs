@@ -30,7 +30,7 @@ use commands::rolecolour::*;
 use commands::rolegreet::*;
 use structures::data::*;
 
-use crate::helpers::db::remove_greeting_by_channel;
+use crate::helpers::db::{remove_greeting_by_channel, remove_greeting_by_role};
 use crate::helpers::*;
 use dashmap::DashMap;
 use logging::log::*;
@@ -99,10 +99,18 @@ impl EventHandler for Handler {
     async fn guild_role_delete(
         &self,
         ctx: Context,
-        guild_id: GuildId,
+        _guild_id: GuildId,
         removed_role_id: RoleId,
         removed_role_data_if_available: Option<Role>,
     ) {
+        drop(removed_role_data_if_available);
+        let pool = {
+            let data = ctx.data.read().await;
+            data.get::<ConnectionPool>().cloned().unwrap()
+        };
+        remove_greeting_by_role(&pool, &removed_role_id)
+            .await
+            .expect("couldn't remove value from database on role delete");
     }
     async fn message(&self, ctx: Context, message: Message) {
         message_handler(ctx, message).await;
@@ -116,7 +124,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, prefix, die, greeting, autodelete, rolecoloursync)]
+#[commands(ping, prefix, die, greeting, autodelete, rolecoloursync, log)]
 struct General;
 
 #[tokio::main]
@@ -219,6 +227,7 @@ async fn main() {
     let prefixes = db::fetch_prefixes(&pool).await.unwrap();
     let greetmap: DashMap<ChannelId, MessageId> = DashMap::new();
     let channelmap: DashMap<ChannelId, i64> = db::fetch_amnesiacs(&pool).await.unwrap();
+    let logmap = db::fetch_logdata(&pool).await.unwrap();
 
     {
         let mut data = client.data.write().await;
@@ -227,6 +236,7 @@ async fn main() {
         data.insert::<PrefixMap>(Arc::new(prefixes));
         data.insert::<GreetMap>(Arc::new(greetmap));
         data.insert::<AmnesiaMap>(Arc::new(channelmap));
+        data.insert::<LogMap>(Arc::new(logmap));
     }
     if let Err(why) = client
         .start_shard_range([shard_array_start, shard_array_end], total_shards)
