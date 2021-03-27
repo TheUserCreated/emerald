@@ -16,6 +16,7 @@ serenity_utils = "0.6.1"
 image = "0.23.14"
 color-thief = "0.2"
 reqwest = "0.11.2"
+chrono = "0.4.19"
 [dependencies.tokio]
 version = "1.0"
 features = ["macros", "signal", "rt-multi-thread"]

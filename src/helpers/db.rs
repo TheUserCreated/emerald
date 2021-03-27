@@ -25,7 +25,7 @@ pub async fn fetch_logdata(pool: &PgPool) -> CommandResult<DashMap<GuildId, LogC
             log_channel: element.channel_id as u64,
             channel_create: element.channel_create as bool,
             channel_update: element.channel_update as bool,
-            channel_delete: element.channel_update as bool,
+            channel_delete: element.channel_delete as bool,
             ban_add: element.ban_add as bool,
             ban_remove: element.ban_remove as bool,
             member_join: element.member_join as bool,
@@ -63,11 +63,12 @@ pub async fn log_update_id(
 
 pub async fn log_set(pool: &PgPool, guild_id: GuildId, channel_id: ChannelId) -> CommandResult {
     sqlx::query!("INSERT INTO logging (guild_id,channel_id,\
-    channel_create,channel_update,ban_add,ban_remove,member_join,member_remove,role_create,\
+    channel_create,channel_update,channel_delete,ban_add,ban_remove,member_join,member_remove,role_create,\
     role_update,role_delete,invite_create,invite_delete,message_edit,message_delete,message_delete_bulk,webhook_update)\
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)",
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)",
             guild_id.0 as i64,
             channel_id.0 as i64,
+            false,
             false,
             false,
             false,
@@ -97,8 +98,18 @@ pub async fn enable_log_event(
     match event {
         1 => {}
         2 => {}
-        3 => {} //placeholders for now.
-        13 => {
+        3 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET channel_delete = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        } //placeholders for now.
+        14 => {
             sqlx::query!(
                 "UPDATE logging \
         SET message_delete = $1 \
@@ -120,19 +131,20 @@ pub async fn enable_log_event(
 /*
    channel_create 1
    channel_update 2
-   ban_add 3
-   ban_remove 4
-   member_join 5
-   member_remove 6
-   role_create 7
-   role_update 8
-   role_delete 9
-   invite_create 10
-   invite_delete 11
-   message_edit 12
-   message_delete 13
-   message_delete_bulk 14
-   webhook_update 15
+   channel_delete 3
+   ban_add 4
+   ban_remove 5
+   member_join 6
+   member_remove 7
+   role_create 8
+   role_update 9
+   role_delete 10
+   invite_create 11
+   invite_delete 12
+   message_edit 13
+   message_delete 14
+   message_delete_bulk 15
+   webhook_update 16
 */
 
 pub async fn fetch_amnesiacs(pool: &PgPool) -> CommandResult<DashMap<ChannelId, i64>> {

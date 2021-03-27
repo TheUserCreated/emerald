@@ -1,7 +1,7 @@
 use crate::helpers::db::{enable_log_event, log_set, log_update_id};
 use crate::structures::data::{ConnectionPool, LogConf, LogMap};
+use chrono::{NaiveTime, Utc};
 use serenity::static_assertions::_core::str::FromStr;
-
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::prelude::*,
@@ -9,15 +9,45 @@ use serenity::{
 };
 
 pub async fn channel_delete_log(ctx: Context, channel: &GuildChannel) {
-    let (pool, logmap) = {
+    let logmap = {
         let data = ctx.data.read().await;
-        let pool = data.get::<ConnectionPool>().cloned().unwrap();
         let logmap = data.get::<LogMap>().cloned().unwrap();
-        (pool, logmap)
+        logmap
     };
     let guild_id = channel.guild_id;
     let guild_log_config = logmap.get(&guild_id).expect("");
-    if !guild_log_config.channel_delete {}
+    if !guild_log_config.channel_delete {
+        return;
+    }
+    let log_channel = ChannelId::from(guild_log_config.log_channel);
+    let guild = Guild::get(&ctx.http, channel.guild_id)
+        .await
+        .expect("log from a guild im not in?");
+    let response = format!(
+        "Channel {} with ID {} was deleted.",
+        channel.name, channel.id
+    );
+    log_channel
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title("Channel Deleted:");
+                e.author(|a| {
+                    let url = guild.icon_url();
+                    if url.is_none() {
+                        return a;
+                    };
+                    a.icon_url(url.unwrap());
+                    a
+                });
+                e.description(response);
+                e.timestamp(&Utc::now());
+                e
+            });
+
+            m
+        })
+        .await
+        .expect("Couldn't send log message. Do I lack perms?");
 }
 
 pub async fn message_delete_log(
@@ -150,7 +180,23 @@ pub async fn add(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
         (pool, logmap)
     };
-    if log_id == 13 {
+    if log_id == 3 {
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.channel_delete = true;
+                v
+            },
+        );
+        enable_log_event(
+            &pool,
+            msg.guild_id.expect("message from deleted guild"),
+            3,
+            true,
+        )
+        .await?;
+    }
+    if log_id == 14 {
         logmap.alter(
             &msg.guild_id.expect("command from guild that doesnt exist"),
             |_, mut v| {
@@ -161,7 +207,7 @@ pub async fn add(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         enable_log_event(
             &pool,
             msg.guild_id.expect("message from deleted guild"),
-            13,
+            14,
             true,
         )
         .await?;
