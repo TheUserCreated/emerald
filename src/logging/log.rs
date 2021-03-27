@@ -1,7 +1,7 @@
 use crate::helpers::db::{enable_log_event, log_set, log_update_id};
-use crate::structures::data::{ConnectionPool, LogMap};
+use crate::structures::data::{ConnectionPool, LogConf, LogMap};
 use serenity::static_assertions::_core::str::FromStr;
-use serenity::utils::MessageBuilder;
+
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::prelude::*,
@@ -111,6 +111,25 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         log_set(&pool, guild_id, channel_id)
             .await
             .expect("couldn't set log channel");
+        let conf = LogConf {
+            log_channel: channel_id.0,
+            channel_create: false,
+            channel_update: false,
+            ban_add: false,
+            ban_remove: false,
+            member_join: false,
+            member_remove: false,
+            role_create: false,
+            role_update: false,
+            role_delete: false,
+            invite_create: false,
+            invite_delete: false,
+            message_edit: false,
+            message_delete: false,
+            message_delete_bulk: false,
+            webhook_update: false,
+        };
+        logmap.insert(guild_id, conf);
     }
 
     let response = format!("Log channel set to {}", channel_id.mention());
