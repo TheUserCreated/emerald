@@ -47,6 +47,7 @@ pub struct LogConf {
     pub log_channel: u64,
     pub channel_create: bool,
     pub channel_update: bool,
+    pub channel_delete: bool,
     pub ban_add: bool,
     pub ban_remove: bool,
     pub member_join: bool,

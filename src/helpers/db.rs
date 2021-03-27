@@ -25,6 +25,7 @@ pub async fn fetch_logdata(pool: &PgPool) -> CommandResult<DashMap<GuildId, LogC
             log_channel: element.channel_id as u64,
             channel_create: element.channel_create as bool,
             channel_update: element.channel_update as bool,
+            channel_delete: element.channel_update as bool,
             ban_add: element.ban_add as bool,
             ban_remove: element.ban_remove as bool,
             member_join: element.member_join as bool,

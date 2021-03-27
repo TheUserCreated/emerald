@@ -96,15 +96,6 @@ impl EventHandler for Handler {
             .await
             .expect("problemo, friendo");
     }
-    async fn message_delete(
-        &self,
-        ctx: Context,
-        channel_id: ChannelId,
-        deleted_message_id: MessageId,
-        guild_id: Option<GuildId>,
-    ) {
-        message_delete_log(ctx, channel_id, deleted_message_id, guild_id).await;
-    }
     async fn guild_role_delete(
         &self,
         ctx: Context,
@@ -123,6 +114,15 @@ impl EventHandler for Handler {
     }
     async fn message(&self, ctx: Context, message: Message) {
         message_handler(ctx, message).await;
+    }
+    async fn message_delete(
+        &self,
+        ctx: Context,
+        channel_id: ChannelId,
+        deleted_message_id: MessageId,
+        guild_id: Option<GuildId>,
+    ) {
+        message_delete_log(ctx, channel_id, deleted_message_id, guild_id).await;
     }
     async fn ready(&self, _: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
@@ -215,7 +215,7 @@ async fn main() {
         )
         .await
         .expect("Err creating client");
-    client.cache_and_http.cache.set_max_messages(10).await;
+    client.cache_and_http.cache.set_max_messages(300).await; //This is a bad idea. This should be like 50.
     let manager = client.shard_manager.clone();
     tokio::spawn(async move {
         loop {

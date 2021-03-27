@@ -5,6 +5,7 @@ CREATE TABLE public.logging
     channel_id bigint NOT NULL,
     channel_create bool NOT NULL,
     channel_update bool NOT NULL,
+    channel_delete bool NOT NULL,
     ban_add bool NOT NULL,
     ban_remove bool NOT NULL,
     member_join bool NOT NULL,

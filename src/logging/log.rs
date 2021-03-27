@@ -15,6 +15,9 @@ pub async fn channel_delete_log(ctx: Context, channel: &GuildChannel) {
         let logmap = data.get::<LogMap>().cloned().unwrap();
         (pool, logmap)
     };
+    let guild_id = channel.guild_id;
+    let guild_log_config = logmap.get(&guild_id).expect("");
+    if !guild_log_config.channel_delete {}
 }
 
 pub async fn message_delete_log(
@@ -119,6 +122,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
             log_channel: channel_id.0,
             channel_create: false,
             channel_update: false,
+            channel_delete: false,
             ban_add: false,
             ban_remove: false,
             member_join: false,
