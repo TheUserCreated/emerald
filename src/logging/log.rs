@@ -50,14 +50,18 @@ pub async fn message_delete_log(
     let author_id = message.author.id;
     log_channel
         .send_message(&ctx.http, |m| {
-            m.content("Deleted Message");
             m.embed(|e| {
-                e.title(&message.author.name);
-                /*e.image(&message.author.avatar.unwrap_or_else(|| {
-                    "https://cdn.discordapp.com/embed/avatars/0.png"
-                        .parse()
-                        .unwrap()
-                }));*/
+                e.title("Deleted Message:");
+                e.author(|a| {
+                    a.icon_url(message.author.avatar_url().unwrap_or_else(|| {
+                        "https://cdn.discordapp.com/embed/avatars/0.png"
+                            .parse()
+                            .unwrap()
+                    }));
+                    a.name(&message.author.name);
+                    a
+                });
+                e.timestamp(message.timestamp.naive_utc().to_string());
                 e.description(&message.content);
                 e.footer(|f| {
                     f.text(author_id);
