@@ -96,6 +96,15 @@ impl EventHandler for Handler {
             .await
             .expect("problemo, friendo");
     }
+    async fn message_delete(
+        &self,
+        ctx: Context,
+        channel_id: ChannelId,
+        deleted_message_id: MessageId,
+        guild_id: Option<GuildId>,
+    ) {
+        message_delete_log(ctx, channel_id, deleted_message_id, guild_id).await;
+    }
     async fn guild_role_delete(
         &self,
         ctx: Context,
@@ -206,6 +215,7 @@ async fn main() {
         )
         .await
         .expect("Err creating client");
+    client.cache_and_http.cache.set_max_messages(10).await;
     let manager = client.shard_manager.clone();
     tokio::spawn(async move {
         loop {
