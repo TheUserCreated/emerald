@@ -30,7 +30,7 @@ pub async fn channel_create_log(ctx: Context, channel: &GuildChannel) {
     log_channel
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
-                e.title("Channel Deleted:");
+                e.title("Channel Created:");
                 e.colour(Colour::BLUE);
                 e.author(|a| {
                     let url = guild.icon_url();
@@ -129,6 +129,7 @@ pub async fn message_delete_log(
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title("Deleted Message:");
+                e.colour(Colour::RED);
                 e.author(|a| {
                     a.icon_url(message.author.avatar_url().unwrap_or_else(|| {
                         "https://cdn.discordapp.com/embed/avatars/0.png"
