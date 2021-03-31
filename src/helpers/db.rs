@@ -108,7 +108,17 @@ pub async fn enable_log_event(
             )
             .execute(pool)
             .await?;
-        } //placeholders for now.
+        }
+        4 => {}
+        5 => {}
+        6 => {}
+        7 => {}
+        8 => {}
+        9 => {}
+        10 => {}
+        11 => {}
+        12 => {}
+        13 => {}
         14 => {
             sqlx::query!(
                 "UPDATE logging \
@@ -120,6 +130,8 @@ pub async fn enable_log_event(
             .execute(pool)
             .await?;
         }
+        15 => {}
+        16 => {}
         _ => {
             info!("tried to enable a log event that doesnt exist?")
         }
