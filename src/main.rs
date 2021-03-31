@@ -68,7 +68,9 @@ impl EventHandler for Handler {
     async fn cache_ready(&self, _ctx: Context, _guilds: Vec<GuildId>) {
         info!("Cache ready!");
     }
-
+    async fn channel_create(&self, ctx: Context, channel: &GuildChannel) {
+        channel_create_log(ctx,channel).await;
+    }
     async fn channel_delete(&self, ctx: Context, channel: &GuildChannel) {
         let (channelmap, greetmap, pool) = {
             let data = ctx.data.read().await;

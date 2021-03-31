@@ -6,7 +6,50 @@ use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::prelude::*,
     prelude::*,
+    utils::Colour,
 };
+pub async fn channel_create_log(ctx: Context, channel: &GuildChannel) {
+    let logmap = {
+        let data = ctx.data.read().await;
+        let logmap = data.get::<LogMap>().cloned().unwrap();
+        logmap
+    };
+    let guild_id = channel.guild_id;
+    let guild_log_config = logmap.get(&guild_id).expect("");
+    if !guild_log_config.channel_create {
+        return;
+    }
+    let log_channel = ChannelId::from(guild_log_config.log_channel);
+    let guild = Guild::get(&ctx.http, channel.guild_id)
+        .await
+        .expect("log from a guild im not in?");
+    let response = format!(
+        "Channel {} with ID {} was created.",
+        channel.name, channel.id
+    );
+    log_channel
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title("Channel Deleted:");
+                e.colour(Colour::BLUE);
+                e.author(|a| {
+                    let url = guild.icon_url();
+                    if url.is_none() {
+                        return a;
+                    };
+                    a.icon_url(url.unwrap());
+                    a
+                });
+                e.description(response);
+                e.timestamp(&Utc::now());
+                e
+            });
+
+            m
+        })
+        .await
+        .expect("Couldn't send log message. Do I lack perms?");
+}
 
 pub async fn channel_delete_log(ctx: Context, channel: &GuildChannel) {
     let logmap = {
@@ -31,6 +74,7 @@ pub async fn channel_delete_log(ctx: Context, channel: &GuildChannel) {
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title("Channel Deleted:");
+                e.colour(Colour::RED);
                 e.author(|a| {
                     let url = guild.icon_url();
                     if url.is_none() {
@@ -180,7 +224,31 @@ pub async fn add(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
         (pool, logmap)
     };
-    if log_id == 3 {
+    let mut response = "";
+    let mut event = 0;
+    if log_id == 1 {
+        response = "channel create";
+        event = 1;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.channel_create = true;
+                v
+            },
+        );
+    } else if log_id == 2 {
+        response = "channel update";
+        event = 2;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.channel_update = true;
+                v
+            },
+        );
+    } else if log_id == 3 {
+        response = "channel delete";
+        event = 3;
         logmap.alter(
             &msg.guild_id.expect("command from guild that doesnt exist"),
             |_, mut v| {
@@ -188,15 +256,109 @@ pub async fn add(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                 v
             },
         );
-        enable_log_event(
-            &pool,
-            msg.guild_id.expect("message from deleted guild"),
-            3,
-            true,
-        )
-        .await?;
-    }
-    if log_id == 14 {
+    } else if log_id == 4 {
+        response = "ban add";
+        event = 4;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.ban_add = true;
+                v
+            },
+        );
+    } else if log_id == 5 {
+        response = "ban remove";
+        event = 1;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.ban_remove = true;
+                v
+            },
+        );
+    } else if log_id == 6 {
+        response = "member_join";
+        event = 6;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.member_join = true;
+                v
+            },
+        );
+    } else if log_id == 7 {
+        response = "member remove";
+        event = 7;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.member_remove = true;
+                v
+            },
+        );
+    } else if log_id == 8 {
+        response = "role create";
+        event = 8;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.role_create = true;
+                v
+            },
+        );
+    } else if log_id == 9 {
+        response = "role update";
+        event = 9;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.role_update = true;
+                v
+            },
+        );
+    } else if log_id == 10 {
+        response = "role delete";
+        event = 10;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.role_delete = true;
+                v
+            },
+        );
+    } else if log_id == 11 {
+        response = "invite create";
+        event = 11;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.invite_create = true;
+                v
+            },
+        );
+    } else if log_id == 12 {
+        response = "invite delete";
+        event = 12;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.invite_delete = true;
+                v
+            },
+        );
+    } else if log_id == 13 {
+        response = "message edit";
+        event = 13;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.message_edit = true;
+                v
+            },
+        );
+    } else if log_id == 14 {
+        response = "message delete";
+        event = 14;
         logmap.alter(
             &msg.guild_id.expect("command from guild that doesnt exist"),
             |_, mut v| {
@@ -204,14 +366,36 @@ pub async fn add(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                 v
             },
         );
-        enable_log_event(
-            &pool,
-            msg.guild_id.expect("message from deleted guild"),
-            14,
-            true,
-        )
-        .await?;
+    } else if log_id == 15 {
+        response = "message bulk delete";
+        event = 15;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.message_delete_bulk = true;
+                v
+            },
+        );
+    } else if log_id == 16 {
+        response = "webhook update";
+        event = 16;
+        logmap.alter(
+            &msg.guild_id.expect("command from guild that doesnt exist"),
+            |_, mut v| {
+                v.webhook_update = true;
+                v
+            },
+        );
     }
-
+    enable_log_event(
+        &pool,
+        msg.guild_id.expect("message from deleted guild"),
+        event,
+        true,
+    )
+    .await
+    .expect("couldnt add log event.");
+    let response = format!("The event `{}` will now be logged.", response);
+    msg.reply(ctx, response).await?;
     Ok(())
 }
