@@ -81,6 +81,7 @@ pub async fn channel_delete_log(ctx: Context, channel: &GuildChannel) {
                         return a;
                     };
                     a.icon_url(url.unwrap());
+                    a.name(guild.name);
                     a
                 });
                 e.description(response);
@@ -123,34 +124,89 @@ pub async fn message_delete_log(
         //we don't log messages from us or other bots
         return;
     }
-    let log_channel = ChannelId::from(log_channel);
-    let author_id = message.author.id;
-    log_channel
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-                e.title("Deleted Message:");
-                e.colour(Colour::RED);
-                e.author(|a| {
-                    a.icon_url(message.author.avatar_url().unwrap_or_else(|| {
-                        "https://cdn.discordapp.com/embed/avatars/0.png"
-                            .parse()
-                            .unwrap()
-                    }));
-                    a.name(&message.author.name);
-                    a
-                });
-                e.timestamp(message.timestamp.naive_utc().to_string());
-                e.description(&message.content);
-                e.footer(|f| {
-                    f.text(author_id);
-                    f
-                });
-                e
-            });
-            m
-        })
+    let audit_log = ctx
+        .http
+        .get_audit_logs(guild_id.0, Some(72), None, None, Some(1))
         .await
-        .expect("couldnt send log message. do i lack perms?");
+        .unwrap();
+    for (_entry_id, entry) in audit_log.entries {
+        if entry.target_id.is_some() && entry.target_id.unwrap() == message.author.id.0 {
+            let executor = entry.user_id;
+            let executor = ctx
+                .http
+                .get_user(executor.0)
+                .await
+                .expect("couldn't get executor in logging");
+            let log_channel = ChannelId::from(log_channel);
+            let author_id = message.author.id;
+            let executor_name = executor.name;
+            let channel = ctx
+                .http
+                .get_channel(message.channel_id.0)
+                .await
+                .expect("couldn't get channel in logging");
+            let channel_name = channel.mention().to_string();
+            let title = format!("Message deleted by {}:", executor_name);
+            log_channel
+                .send_message(&ctx.http, |m| {
+                    m.embed(|e| {
+                        e.title(title);
+                        e.colour(Colour::RED);
+                        e.author(|a| {
+                            a.icon_url(message.author.avatar_url().unwrap_or_else(|| {
+                                "https://cdn.discordapp.com/embed/avatars/0.png"
+                                    .parse()
+                                    .unwrap()
+                            }));
+                            a.name(&message.author.name);
+                            a
+                        });
+
+                        e.timestamp(message.timestamp.naive_utc().to_string());
+                        e.description(&message.content);
+                        e.footer(|f| {
+                            f.text(author_id);
+                            f
+                        });
+                        e
+                    });
+                    m
+                })
+                .await
+                .expect("couldn't send log message. do i lack perms?");
+            return;
+        } else {
+            let log_channel = ChannelId::from(log_channel);
+            let author_id = message.author.id;
+            log_channel
+                .send_message(&ctx.http, |m| {
+                    m.embed(|e| {
+                        e.title("Message Deleted:");
+                        e.colour(Colour::RED);
+                        e.author(|a| {
+                            a.icon_url(message.author.avatar_url().unwrap_or_else(|| {
+                                "https://cdn.discordapp.com/embed/avatars/0.png"
+                                    .parse()
+                                    .unwrap()
+                            }));
+                            a.name(&message.author.name);
+                            a
+                        });
+
+                        e.timestamp(message.timestamp.naive_utc().to_string());
+                        e.description(&message.content);
+                        e.footer(|f| {
+                            f.text(author_id);
+                            f
+                        });
+                        e
+                    });
+                    m
+                })
+                .await
+                .expect("couldn't send log message. do i lack perms?");
+        }
+    }
 }
 
 #[command]
