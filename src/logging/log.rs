@@ -1,6 +1,6 @@
 use crate::helpers::db::{enable_log_event, log_set, log_update_id};
 use crate::structures::data::{ConnectionPool, LogConf, LogMap};
-use chrono::{NaiveTime, Utc};
+use chrono::Utc;
 use serenity::static_assertions::_core::str::FromStr;
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
