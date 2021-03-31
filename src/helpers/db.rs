@@ -96,8 +96,28 @@ pub async fn enable_log_event(
     value: bool,
 ) -> CommandResult {
     match event {
-        1 => {}
-        2 => {}
+        1 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET channel_create = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        2 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET channel_update = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
         3 => {
             sqlx::query!(
                 "UPDATE logging \
@@ -109,16 +129,116 @@ pub async fn enable_log_event(
             .execute(pool)
             .await?;
         }
-        4 => {}
-        5 => {}
-        6 => {}
-        7 => {}
-        8 => {}
-        9 => {}
-        10 => {}
-        11 => {}
-        12 => {}
-        13 => {}
+        4 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET ban_add = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        5 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET ban_remove = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        6 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET member_join = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        7 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET member_remove = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        8 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET role_create = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        9 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET role_update = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        10 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET role_delete = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        11 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET invite_create = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        12 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET invite_delete = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        13 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET message_edit = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
         14 => {
             sqlx::query!(
                 "UPDATE logging \
@@ -130,8 +250,28 @@ pub async fn enable_log_event(
             .execute(pool)
             .await?;
         }
-        15 => {}
-        16 => {}
+        15 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET message_delete_bulk = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
+        16 => {
+            sqlx::query!(
+                "UPDATE logging \
+        SET webhook_update = $1 \
+        WHERE guild_id = $2",
+                value,
+                guild_id.0 as i64
+            )
+            .execute(pool)
+            .await?;
+        }
         _ => {
             info!("tried to enable a log event that doesnt exist?")
         }
